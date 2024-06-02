@@ -2,21 +2,12 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { MongoClient, ServerApiVersion } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 
 // Middleware
-app.use(
-    cors({
-      origin: [
-        "http://localhost:5000",
-        // "https://ass11-study-room.web.app",
-        // "https://ass11-study-room.firebaseapp.com",
-      ],
-      credentials: true,
-    })
-  );
+app.use(cors());
 app.use(express.json());
 
 
@@ -35,7 +26,14 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
      //Database Collection
-     const campsCollection = client.db('campsDB').collection('camps')
+     const campsCollection = client.db('campsDB').collection('camp');
+
+
+    // CampData
+    app.get('/camps', async(req, res) => {
+        const result = await campsCollection.find().toArray();
+        res.send(result);
+    })
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
