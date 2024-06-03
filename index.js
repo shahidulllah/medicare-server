@@ -27,12 +27,22 @@ async function run() {
   try {
      //Database Collection
      const campsCollection = client.db('campsDB').collection('camp');
+     const participantCollection = client.db('campsDB').collection('participant');
 
 
     // CampData
     app.get('/camps', async(req, res) => {
         const result = await campsCollection.find().toArray();
         res.send(result);
+    })
+
+    // Post participant info
+      app.post('/participants', async (req, res) => {
+        const participantInfo = req.body;
+        console.log(participantInfo);
+
+        const result = await participantCollection.insertOne(participantInfo);
+        res.send(result)
     })
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
