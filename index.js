@@ -25,24 +25,51 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-     //Database Collection
-     const campsCollection = client.db('campsDB').collection('camp');
-     const participantCollection = client.db('campsDB').collection('participant');
+    //Database Collection
+    const usersCollection = client.db('campsDB').collection('user');
+    const campsCollection = client.db('campsDB').collection('camp');
+    const participantCollection = client.db('campsDB').collection('participant');
 
 
-    // CampData
-    app.get('/camps', async(req, res) => {
-        const result = await campsCollection.find().toArray();
-        res.send(result);
+    // users related api
+    app.post('/users', async (req, res) => {
+      const usersData = req.body;
+      console.log(usersData);
+
+      const result = await usersCollection.insertOne(usersData);
+      res.send(result)
     })
 
-    // Post participant info
-      app.post('/participants', async (req, res) => {
-        const participantInfo = req.body;
-        console.log(participantInfo);
+    // CampData
+    app.get('/camps', async (req, res) => {
+      const email = req.query.email;
+      const query = { email: email };
+      const result = await campsCollection.find(query).toArray();
+      res.send(result);
+    })
 
-        const result = await participantCollection.insertOne(participantInfo);
-        res.send(result)
+    //Post CampData by organizer
+    app.post('/camps', async (req, res) => {
+      const campData = req.body;
+      console.log(campData);
+
+      const result = await campsCollection.insertOne(campData);
+      res.send(result)
+    })
+
+
+    // Post participant info
+    app.post('/participants', async (req, res) => {
+      const participantInfo = req.body;
+
+      const result = await participantCollection.insertOne(participantInfo);
+      res.send(result)
+    })
+
+    // Get participant info
+    app.get('/participants', async (req, res) => {
+      const result = await participantCollection.find().toArray();
+      res.send(result);
     })
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
@@ -54,9 +81,9 @@ run().catch(console.dir);
 
 //Checking
 app.get('/', (req, res) => {
-    res.send('MIDICO SERVER IS RUNNING SUCCESSFULLY..!')
+  res.send('MIDICO SERVER IS RUNNING SUCCESSFULLY..!')
 })
 
 app.listen(port, () => {
-    console.log(`Server is running on port: ${port}`)
+  console.log(`Server is running on port: ${port}`)
 })
