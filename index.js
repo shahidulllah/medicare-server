@@ -2,7 +2,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -34,10 +34,27 @@ async function run() {
     // users related api
     app.post('/users', async (req, res) => {
       const usersData = req.body;
-      console.log(usersData);
-
+      // validate Existing user
+      const query = { email: usersData.email }
+      const existingUser = await usersCollection.findOne(query);
+      if (existingUser) {
+        return res.send({ message: 'User already exists', insertedId: null })
+      }
       const result = await usersCollection.insertOne(usersData);
       res.send(result)
+    })
+
+    // Make Admin
+    app.patch('/users/admin/:id', async (req, res) => {
+      const id = req.params;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          role: "admin"
+        }
+      }
+      const result = await usersCollection.updateOne(filter, updatedDoc);
+      res.send(result);
     })
 
     // CampData
@@ -45,6 +62,50 @@ async function run() {
       const email = req.query.email;
       const query = { email: email };
       const result = await campsCollection.find(query).toArray();
+      res.send(result);
+    })
+
+    // CampData by Id
+    app.get('/camps/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await campsCollection.findOne(query);
+      res.send(result);
+    })
+
+    // Update Camp
+    app.patch('/camps/:id', async (req, res) => {
+      const camp = req.body;
+      const id = req.params;
+      const filter = {_id: new ObjectId(id)}
+      const updatedDoc = {
+        $set: {
+          CampName: camp.CampName,
+          Image: camp.Image,
+          CampFees: camp.CampFees,
+          DateAndTime: camp.DateAndTime,
+          Location: camp.Location,
+          HealthcareProfessional: camp.HealthcareProfessional,
+          ParticipantCount: camp.ParticipantCount,
+          Description: camp.Description
+        }
+      }
+      const result = await campsCollection.updateOne(filter, updatedDoc)
+      res.send(result)
+    })
+    // //Get CampData of specific user
+    // app.get('/camps/:email', async (req, res) => {
+    //   const email = req.params.email;
+    //   const query = { email: email }
+    //   const result = await campsCollection.find(query).toArray();
+    //   res.send(result);
+    // })
+
+    //Delete Camps
+    app.delete('/camps/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await campsCollection.deleteOne(query);
       res.send(result);
     })
 
