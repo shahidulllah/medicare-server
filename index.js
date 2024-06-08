@@ -147,12 +147,17 @@ async function run() {
     // Payment related API
     app.post('/payments', async (req, res) => {
       const paymentData = req.body;
-      console.log('Payment Info',paymentData);
-      
+     
       const result = await paymentCollection.insertOne(paymentData);
       res.send(result)
     })
-
+    
+     // Get payment data
+     app.get('/payments', async (req, res) => {
+      
+      const result = await paymentCollection.find().toArray();
+      res.send(result);
+    })
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
