@@ -4,6 +4,7 @@ const cors = require('cors');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const port = process.env.PORT || 5000;
 
 // Middleware
@@ -29,6 +30,7 @@ async function run() {
     const usersCollection = client.db('campsDB').collection('user');
     const campsCollection = client.db('campsDB').collection('camp');
     const participantCollection = client.db('campsDB').collection('participant');
+    const paymentCollection = client.db('campsDB').collection('payment');
 
 
     // users related api
@@ -77,7 +79,7 @@ async function run() {
     app.patch('/camps/:id', async (req, res) => {
       const camp = req.body;
       const id = req.params;
-      const filter = {_id: new ObjectId(id)}
+      const filter = { _id: new ObjectId(id) }
       const updatedDoc = {
         $set: {
           CampName: camp.CampName,
@@ -93,13 +95,6 @@ async function run() {
       const result = await campsCollection.updateOne(filter, updatedDoc)
       res.send(result)
     })
-    // //Get CampData of specific user
-    // app.get('/camps/:email', async (req, res) => {
-    //   const email = req.params.email;
-    //   const query = { email: email }
-    //   const result = await campsCollection.find(query).toArray();
-    //   res.send(result);
-    // })
 
     //Delete Camps
     app.delete('/camps/:id', async (req, res) => {
@@ -132,6 +127,32 @@ async function run() {
       const result = await participantCollection.find().toArray();
       res.send(result);
     })
+
+    // Payment Intent
+    app.post('/create-payment-intent', async (req, res) => {
+      const { price } = req.body;
+      const amount = parseInt(price * 100);
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ['card']
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret
+      })
+    })
+
+    // Payment related API
+    app.post('/payments', async (req, res) => {
+      const paymentData = req.body;
+      console.log('Payment Info',paymentData);
+      
+      const result = await paymentCollection.insertOne(paymentData);
+      res.send(result)
+    })
+
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
