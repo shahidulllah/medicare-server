@@ -61,10 +61,18 @@ async function run() {
 
     // CampData
     app.get('/camps', async (req, res) => {
+      const page = parseInt(req.query.page) || 0;
+      const size = parseInt(req.query.size) || 10;
       const email = req.query.email;
-      const query = { email: email };
-      const result = await campsCollection.find(query).toArray();
-      res.send(result);
+      const query = email ? { email: email } : {};
+
+      const totalCamps = await campsCollection.countDocuments(query);
+      const camps = await campsCollection.find(query)
+        .skip(page * size)
+        .limit(size)
+        .toArray();
+
+      res.send({ totalCamps, camps });
     })
 
     // CampData by Id
@@ -147,14 +155,14 @@ async function run() {
     // Payment related API
     app.post('/payments', async (req, res) => {
       const paymentData = req.body;
-     
+
       const result = await paymentCollection.insertOne(paymentData);
       res.send(result)
     })
-    
-     // Get payment data
-     app.get('/payments', async (req, res) => {
-      
+
+    // Get payment data
+    app.get('/payments', async (req, res) => {
+
       const result = await paymentCollection.find().toArray();
       res.send(result);
     })
