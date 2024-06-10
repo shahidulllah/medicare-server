@@ -2,6 +2,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
@@ -32,6 +33,43 @@ async function run() {
     const participantCollection = client.db('campsDB').collection('participant');
     const paymentCollection = client.db('campsDB').collection('payment');
 
+    // jwt related api
+    app.post('/jwt', async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
+      res.send({ token });
+    })
+
+    // Middlewares of token
+    const verifyToken = (req, res, next) => {
+      // console.log('Inside verifyToken:', req.headers.authorization);
+      if (!req.headers.authorization) {
+        return res.status(401).send({ message: 'Unauthorize access' })
+      }
+
+      const token = req.headers.authorization.split(' ')[1];
+      jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+          return res.status(401).send({ message: 'Unauthorize Access' })
+        }
+        req.decoded = decoded;
+        next();
+      })
+    }
+
+
+    // verify admin
+    const verifyAdmin = async (req, res, next) =>{
+      const email = req.decoded.email;
+      const query = {email: email};
+      const user = await usersCollection.findOne(query);
+      const isAdmin = user?.role === 'admin';
+
+      if(!isAdmin){
+        return res.status(403).send({message: 'Forbidden access'});
+      }
+      next();
+    }
 
     // users related api
     app.post('/users', async (req, res) => {
@@ -44,6 +82,22 @@ async function run() {
       }
       const result = await usersCollection.insertOne(usersData);
       res.send(result)
+    })
+
+    app.get('/users/admin/:email', verifyToken, async (req, res) => {
+      const email = req.params.email;
+
+      if(email !== req.decoded.email){
+        return res.status(403).send({message: 'Forbidden access'})
+      }
+
+      const query = {email: email}
+      const user = await usersCollection.findOne(query);
+      let admin = false;
+      if(user) {
+        admin = user?.role === 'admin';
+      }
+      res.send({admin})
     })
 
     // Make Admin
@@ -59,10 +113,10 @@ async function run() {
       res.send(result);
     })
 
-    // CampData
-    app.get('/camps', async (req, res) => {
-      const page = parseInt(req.query.page) || 0;
-      const size = parseInt(req.query.size) || 10;
+    // CampData with pagination
+    app.get('/camps', verifyToken, async (req, res) => {
+      const page = parseInt(req.query.page);
+      const size = parseInt(req.query.size);
       const email = req.query.email;
       const query = email ? { email: email } : {};
 
@@ -84,7 +138,7 @@ async function run() {
     })
 
     // Update Camp
-    app.patch('/camps/:id', async (req, res) => {
+    app.patch('/camps/:id',verifyToken, async (req, res) => {
       const camp = req.body;
       const id = req.params;
       const filter = { _id: new ObjectId(id) }
