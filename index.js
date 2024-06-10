@@ -114,7 +114,7 @@ async function run() {
     })
 
     // CampData with pagination
-    app.get('/camps', verifyToken, async (req, res) => {
+    app.get('/camps', async (req, res) => {
       const page = parseInt(req.query.page);
       const size = parseInt(req.query.size);
       const email = req.query.email;
