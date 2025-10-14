@@ -1,21 +1,20 @@
 //Initial Declaration
 const express = require("express");
 const cors = require("cors");
-require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const port = process.env.PORT || 5000;
+require("dotenv").config();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// MongoDB Connection
+// MongoDB URI
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.qcso25z.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -26,13 +25,12 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
+    const campsDB = client.db("campsDB");
     //Database Collection
-    const usersCollection = client.db("campsDB").collection("user");
-    const campsCollection = client.db("campsDB").collection("camp");
-    const participantCollection = client
-      .db("campsDB")
-      .collection("participant");
-    const paymentCollection = client.db("campsDB").collection("payment");
+    const usersCollection = campsDB.collection("user");
+    const campsCollection = campsDB.collection("camp");
+    const participantCollection = campsDB.collection("participant");
+    const paymentCollection = campsDB.collection("payment");
 
     // jwt related api
     app.post("/jwt", async (req, res) => {
@@ -45,7 +43,6 @@ async function run() {
 
     // Middlewares of token
     const verifyToken = (req, res, next) => {
-      // console.log('Inside verifyToken:', req.headers.authorization);
       if (!req.headers.authorization) {
         return res.status(401).send({ message: "Unauthorize access" });
       }
