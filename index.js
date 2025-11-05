@@ -84,6 +84,7 @@ async function run() {
       res.send(result);
     });
 
+    //user as admin
     app.get("/users/admin/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
 
@@ -100,6 +101,7 @@ async function run() {
       res.send({ admin });
     });
 
+    //Specific user by email
     app.get("/users/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
