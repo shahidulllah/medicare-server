@@ -109,6 +109,7 @@ async function run() {
       res.send(result);
     });
 
+    //User update
     app.patch("/users/:id", async (req, res) => {
       const id = req.params.id;
       const user = req.body;
@@ -124,6 +125,7 @@ async function run() {
       res.send(result);
     });
 
+    //get all users
     app.get("/users", async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
