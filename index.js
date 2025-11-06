@@ -131,6 +131,7 @@ async function run() {
       res.send(result);
     });
 
+    //Get Specific user by id
     app.get("/users/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
